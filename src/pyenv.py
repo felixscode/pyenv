@@ -121,7 +121,8 @@ def new_env(config: Config, name: str) -> Result:
         "python{} -m venv {}".format(config.version, config.dirs.install / name)
     )
     if config.create_bin:
-        os.symlink(config.dirs.install / name, config.dirs.bin_dir / name)
+        full_name = str(name) + "/bin/activate"
+        os.symlink(config.dirs.install / full_name, config.dirs.bin_dir / name)
     return ok("created {} successfully".format(name))
 
 

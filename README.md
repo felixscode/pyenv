@@ -12,3 +12,4 @@ little python wrapper around the venv lib. Manages dirs for installing and remov
 ## install
 src uses only std libs and tomllib
 also added setup.py pip ready
+git 
