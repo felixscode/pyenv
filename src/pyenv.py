@@ -133,7 +133,7 @@ def remove_env(config: Config, name: str) -> Result:
     if not os.path.exists(config.dirs.install / name):
         return error("Given environment to remove does not exist")
     shutil.rmtree(config.dirs.install / name)  # removes all subcontet plus folder
-    os.remove(config.dirs.bin_dir / name)
+    shutil.rmtree(config.dirs.bin_dir / name)
     return ok("removed {} successfully".format(name))
 
 
