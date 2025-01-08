@@ -203,42 +203,45 @@ def main() -> None:
         print(config)
         return
     config = config.state
+    
+    # Create parser with subcommands
     parser = argparse.ArgumentParser(
-        description="Create new python virtual environment",
+        description="Python virtual environment manager",
         argument_default=argparse.SUPPRESS,
     )
-    parser.add_argument(
-        "--new",
-        metavar="N",
-        type=str,
-        help="name new for venv",
-    )
-    parser.add_argument(
-        "--remove",
-        metavar="R",
-        type=str,
-        help="name of venv to be removed",
-    )
-    parser.add_argument(
-        "--version",
-        metavar="V",
-        type=float,
-        help="install venv with given python version",
-    )
-    parser.add_argument(
-        "--path",
-        metavar="P",
-        type=str,
-        help="install in custom dir. If not given std path defined in config.toml is used ",
-    )
-    parser.add_argument(
-        "--list", help="list all envs by given regex", action="store_true"
-    )
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # New environment command
+    new_parser = subparsers.add_parser('new', help='Create new virtual environment')
+    new_parser.add_argument('name', help='Name for the new environment')
+    new_parser.add_argument('--version', type=str, help='Python version to use')
+    new_parser.add_argument('--path', type=str, help='Custom installation directory')
+    
+    # Remove command
+    remove_parser = subparsers.add_parser('remove', help='Remove virtual environment')
+    remove_parser.add_argument('name', help='Name of environment to remove')
+    
+    # List command
+    list_parser = subparsers.add_parser('list', help='List virtual environments')
+    list_parser.add_argument('--pattern', help='Filter environments by regex pattern')
+    
     args = parser.parse_args()
-    result = match_user_input(args=args, config=config)
-
+    
+    # Convert subcommand format to current format
+    namespace_args = argparse.Namespace()
+    if args.command == 'new':
+        namespace_args.new = args.name
+        if hasattr(args, 'version'):
+            namespace_args.version = args.version
+        if hasattr(args, 'path'):
+            namespace_args.path = args.path
+    elif args.command == 'remove':
+        namespace_args.remove = args.name
+    elif args.command == 'list':
+        namespace_args.list = True
+    
+    result = match_user_input(args=namespace_args, config=config)
     print(result)
-    return
 
 
 if __name__ == "__main__":
