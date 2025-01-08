@@ -3,7 +3,7 @@
     <img src="logo.webp" alt="Pyenv Logo" width="360" height="360">
 </div>
 
-A Python utility for managing virtual environments using the standard `venv` library. This lightweight tool simplifies the creation, removal, and management of Python virtual environments.
+A Python utility for managing virtual environments using the standard `venv` library for Linux users. This lightweight tool simplifies the creation, removal, and management of Python virtual environments. Its a wrapper around venv, witch manages venv access and locations.
 
 ## Features 🎯
 
@@ -20,7 +20,7 @@ Clone the repository:
    git clone <repository-url>
    cd pyenv
    chmod +x ./install.sh
-   ./install.sh
+   sudo ./install.sh
 ```
 During installation you will be prompted for:
 

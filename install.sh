@@ -8,11 +8,20 @@ if [ ! -d "$PYENV_ROOT/src" ]; then
     echo "Error: src folder not found in current directory. Please run this script from the correct location."
     exit 1
 fi
+# Check if the script is run with sudo privileges
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: This script must be run with sudo privileges."
+    exit 1
+fi
+
+
 
 # Ask for remaining destinations
 echo "Please provide the following information:"
-read -p "1. Bin location and name (e.g., /usr/local/bin/pyenv): " PYENV_BIN
-read -p "2. Location to store virtual environments (e.g., /home/user/.venvs): " VENV_PATH
+read -p "1. Bin location and name (default: /usr/local/bin/pyenv): " PYENV_BIN
+PYENV_BIN=${PYENV_BIN:-/usr/local/bin/pyenv}
+read -p "2. Location to store virtual environments (default: /home/$USER/.pyenvs): " VENV_PATH
+VENV_PATH=${VENV_PATH:-/home/$USER/.pyenvs}
 
 # Check if Python 3 is installed
 if ! command -v python3 &> /dev/null; then
@@ -21,7 +30,8 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # Confirm creation of directories
-read -p "Do you want to create the necessary directories if they don't exist? (y/n): " CREATE_DIRS
+read -p "Do you want to create the necessary directories if they don't exist? (Y/n): " CREATE_DIRS
+CREATE_DIRS=${CREATE_DIRS:-Y}
 if [[ $CREATE_DIRS =~ ^[Yy]$ ]]; then
     mkdir -p "$(dirname "$PYENV_BIN")"
     mkdir -p "$VENV_PATH/bin"
@@ -44,10 +54,12 @@ sed -i "s|PYENV_ROOT_PLACEHOLDER|$PYENV_ROOT|g" "$PYENV_BIN"
 chmod +x "$PYENV_BIN"
 
 # Ask to add to .bashrc
-read -p "Do you want to add VENV_PATHS to your .bashrc? (y/n): This is necessary to activate the venv via an alias " ADD_TO_BASHRC
+read -p "Do you want to add VENV_PATHS to your .bashrc? (Y/n): This is necessary to activate the venv via an alias " ADD_TO_BASHRC
+ADD_TO_BASHRC=${ADD_TO_BASHRC:-Y}
 if [[ $ADD_TO_BASHRC =~ ^[Yy]$ ]]; then
-    echo "" >> ~/.bashrc
-    echo "# Pyenv configuration" >> ~/.bashrc
-    echo "export PATH=\"$VENV_PATH/bin:\$PATH\"" >> ~/.bashrc
+    echo "" >> /home/$USER/.bashrc
+    echo "# Pyenv configuration" >> /home/$USER/.bashrc
+    echo "export PATH=\"$VENV_PATH/bin:\$PATH\"" >> /home/$USER/.bashrc
     echo "Added paths to .bashrc. Please restart your terminal or run 'source ~/.bashrc'"
+
 fi

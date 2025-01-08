@@ -18,11 +18,8 @@ import os
 import shutil
 
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
 
+PYENV_DIR = Path.home() / Path(".pyenvs") if os.environ.get("PYENV_DIR") is None else Path(os.environ.get("PYENV_DIR"))
 
 @dataclass(frozen=True)
 class Directory:
@@ -47,14 +44,6 @@ class Config:
     dirs: Directory
     version: Optional[str]
     create_bin: bool
-
-    @abstractmethod
-    def from_dict(_dict):
-        return Config(
-            dirs=Directory.from_dict(_dict["dirs"]),
-            version=str(_dict["version"]),
-            create_bin=bool(_dict["create_bin"]),
-        )
 
 
 @dataclass(frozen=True)
@@ -90,23 +79,22 @@ def error(arg: str) -> Result:
     return Result(state=Error(arg))
 
 
-def load_config(dir: Result) -> Directory:
+def get_default_version() -> str:
     """
-    parse config from toml.
+    get the default python version
     """
-    if dir:
-        return dir
-    dir = dir.state
-    with open(dir, mode="rb") as fp:
-        config = tomllib.load(fp)
-    return ok(map_config_to_obj(config))
-
-
-def map_config_to_obj(dict_conf: dict) -> Config:
+    version_numers = os.popen('python3 --version').read().strip().split()[1].split(".")
+    if len(version_numers) < 2:
+        return version_numers[0] + ".0"
+    return version_numers[0] + "." + version_numers[1]
+def get_config() -> Config:
     """
     map config dict to dto for sleeker code
     """
-    return Config.from_dict(dict_conf)
+    return Config(
+        dirs=Directory(install=PYENV_DIR, bin_dir=PYENV_DIR / Path("bin")),
+        version=get_default_version(),
+        create_bin=True)
 
 
 def new_env(config: Config, name: str) -> Result:
@@ -117,9 +105,11 @@ def new_env(config: Config, name: str) -> Result:
     if name in get_names_as_list(config.dirs.bin_dir) + get_system_bins():
         return error("selected name is already used please choose different name")
 
-    _ = os.system(  # check res
+    result = os.system(
         "python{} -m venv {}".format(config.version, config.dirs.install / name)
     )
+    if result != 0:
+        return error("Failed to create virtual environment")
     if config.create_bin:
         full_name = str(name) + "/bin/activate"
         os.symlink(config.dirs.install / full_name, config.dirs.bin_dir / name)
@@ -170,9 +160,13 @@ def match_user_input(args: argparse.Namespace, config: Config) -> Result:
     """
     # modding vars
     if hasattr(args, "version"):  # args.version:
-        config = replace(config, version=args.version)
+        if args.version is not None:
+            config = replace(config, version=args.version)
     if hasattr(args, "path"):
-        config = replace(config, dirs=replace(config.dirs, install=args.path))
+        if args.path is not None:
+            if not os.path.exists(args.path):
+                return error("Given path does not exist")
+            config = replace(config, dirs=replace(config.dirs, install=args.path))
 
     # matching usecase
     match args:
@@ -198,11 +192,7 @@ def find_prj_dir():
 
 
 def main() -> None:
-    config = load_config(find_prj_dir())
-    if bool(config):
-        print(config)
-        return
-    config = config.state
+    config = get_config()
     
     # Create parser with subcommands
     parser = argparse.ArgumentParser(

@@ -1,6 +1,0 @@
-
-version = "3.10"
-create_bin = true
-[dirs]
-    install = '/home/felix/.pyenvs'
-    bin_dir = '/home/felix/.pyenvs/bin'
